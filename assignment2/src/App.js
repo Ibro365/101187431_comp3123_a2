@@ -1,4 +1,8 @@
-import React from 'react'
+import React from 'react';
+import './App.scss';
+
+import { WeatherData } from './components/WeatherData'
+import { StatusData } from './components/StatusData'
 
 class App extends React.Component {
   constructor(props) {
@@ -13,10 +17,12 @@ class App extends React.Component {
   abortController = new AbortController();
   controllerSignal = this.abortController.signal;
 
-  
+
+
+ 
 
   getWeatherData = () => {
-    const weatherApi = `api.openweathermap.org/data/2.5/weather?q=Toronto&appid=${process.env.REACT_APP_WEATHER_KEY}`;
+    const weatherApi = `http://api.openweathermap.org/data/2.5/weather?q=Toronto&appid=${process.env.REACT_APP_WEATHER_KEY}`;
 
     fetch(weatherApi, { signal: this.controllerSignal })
     .then(response => response.json())
@@ -27,9 +33,10 @@ class App extends React.Component {
         const { country } = result.sys;
         const { temp, temp_min, temp_max, feels_like, humidity } = result.main;
         const { description, icon } = result.weather[0];
-        const { speed, deg } = result.wind;
+        
 
         this.setState({
+          status: 'success',
           isLoaded: true,
           weatherData: {
             name,
@@ -40,8 +47,6 @@ class App extends React.Component {
             feels_like: feels_like.toFixed(1),
             temp_min: temp_min.toFixed(1),
             temp_max: temp_max.toFixed(1),
-            speed,
-            deg,
             humidity
           }
         });
@@ -54,9 +59,36 @@ class App extends React.Component {
       }
     );
   }
+  
+  onClick = () => {
+    this.getWeatherData();
+  }
+
+  returnActiveView = (status) => {
+    switch(status) {
+      case 'init':
+        return(
+          <button 
+          className='btn-main' 
+          onClick={this.onClick}
+          >
+            Get Weather Details
+          </button>
+        );
+      case 'success':
+        return <WeatherData data={this.state.weatherData} />;
+      default:
+        return <StatusData status={status} />;
+    }
+  }
+
 
   componentDidMount() {
-    this.getWeatherData();
+    if(localStorage.getItem('weather-accessed')) {
+      this.weatherInit();
+    } else {
+      return;
+    }
   }
 
   componentWillUnmount() {
@@ -67,7 +99,7 @@ class App extends React.Component {
     return (
       <div className='App'>
         <div className='container'>
-
+          {this.returnActiveView(this.state.status)}
         </div>
       </div>
     );
